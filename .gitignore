@@ -13,3 +13,11 @@ dist/
 
 # Local databases
 *.db
+
+# metrics output (regenerated on every run)
+scripts/metrics/REPORT.md
+scripts/metrics/results.json
+metrics/
+
+# Python cache
+__pycache__/
