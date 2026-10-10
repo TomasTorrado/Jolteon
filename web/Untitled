@@ -1,0 +1,60 @@
+I'm adding a finished React dashboard ("Jolteon monitor") to this project. Please integrate it without breaking anything that already works.
+
+## Context
+The project is an ESP32 + thermoelectric generator hackathon build. The pipeline is ESP32 -> Python bridge -> SQLite -> Databricks Lakebase -> FastAPI (api/main.py) -> React dashboard. The dashboard folder is already written and tested against a mock API. Your job is to wire it into the real frontend and the real backend.
+
+The dashboard is in ./dashboard/ (unzipped from jolteon-dashboard.zip). It contains:
+Dashboard.jsx, Chart.jsx, api.js, useDashboardData.js, dashboard.css, README.md, and assets/jolteon-logo.png and assets/eeveelutions.png.
+
+## Step 1: Look before changing
+1. Read the existing frontend: package.json, the bundler config (Vite, CRA or Next), the entry file, and the current App component. Tell me what you found.
+2. Read api/main.py and the API's CORS setup.
+3. If a frontend already exists, do not delete it. Mount the dashboard as the main page and keep the old code unless it conflicts.
+
+## Step 2: Copy it in
+1. Copy the folder to src/dashboard/ (or the equivalent for this framework). Keep the file names.
+2. Render <Dashboard /> from the app entry, with default export from Dashboard.jsx.
+3. Imports use relative paths (./assets/...). Make sure the image imports work with this bundler.
+4. The only dependency is React (hooks only). Do not add chart libraries. Charts are plain SVG on purpose.
+5. The font is Nunito. The CSS expects it to be loaded; add the Google Fonts link in index.html if it is missing.
+
+## Step 3: Connect it to the real API
+The dashboard calls these endpoints (see api.js):
+- GET /api/health
+- GET /api/latest  (a reading, or null)
+- GET /api/readings?since=<ISO time>&max_points=<n>  (oldest first)
+- GET /api/summary  ({first_ts, latest_ts, count, energy_wh, charge_mah, avg_power_w})
+
+A reading has 14 fields: ts, seq, phase, t_hot_c, t_cold_c, delta_t_c, gen_v, gen_ma, gen_w, batt_v, batt_ma, batt_w, charge_mah, energy_wh.
+
+- api.js uses VITE_API_URL if set, otherwise a relative /api path. Set up either a dev proxy to the FastAPI port or a .env with VITE_API_URL, whichever fits this project. Add CORS to the FastAPI app if the frontend runs on a different origin.
+- If the field names in the real responses differ from the list above, fix them in ONE place (a small mapping in api.js) rather than all over the components. Tell me what you changed.
+
+## Step 4: Check the backend against what the dashboard assumes
+Check each of these in api/main.py and report back. Fix only small, safe things, and ask before bigger changes.
+1. `since` format: does /api/readings accept the ISO string that api.js sends (new Date(...).toISOString(), ending in "Z")?
+2. `max_points`: does it really downsample (for example, evenly spaced) so 12h/24h return about 300 points? If it just truncates, the long charts will be wrong.
+3. Order: readings must come back oldest first.
+4. /api/latest returns null (not an error) when the database is empty.
+5. Timestamps: ISO 8601 with a timezone, and consistent between SQLite and Lakebase.
+6. Phase and sign: batt_ma/batt_w are signed (positive = charging). The UI shows Current with a sign.
+7. Latency: if the API reads from Lakebase, how stale can /api/latest be? The header says "No new data" after 20 seconds without a new reading.
+
+## Step 5: Run and check it
+1. Install and start the backend and the frontend.
+2. Open the page and confirm:
+   - The header status says "Live" with a moving bolt when the ESP32 bridge is sending data, and shows a sensible state otherwise ("Can't reach the API", "Waiting for first reading", "No new data").
+   - The three cards (Energy stored, Power, Temperature difference) are in one row at equal size on a wide screen, and stack on a phone.
+   - Each card has its OWN Live / 12h / 24h tabs. Changing one must not change the others.
+   - Live updates about every 2 seconds, and the line visibly moves.
+   - The "Charts | Phone" tab works. The Phone tab shows a ring based on energy_wh / PHONE_WH.
+   - Dark mode toggle works and persists.
+   - "Raw readings" opens and shows real rows.
+3. Run the production build and fix any errors or warnings that come from the dashboard code.
+
+## Rules
+- Keep the look as it is: neumorphic tiles, Pokemon-type colors (Energy gold, Power orange, hot red, cold blue), the bolt for live status, the logo left of the title, the trio image on the right. Don't redesign or restyle.
+- Don't add features that weren't asked for.
+- PHONE_WH = 13.9 in Dashboard.jsx is an approximate phone battery energy. Leave a comment pointing to where to change it. Don't change the number without asking me.
+- The y-axis on each chart zooms to the data on purpose (so small movements show). Don't change it to start at zero.
+- Don't commit or push. Give me a summary at the end: files added, files changed, backend issues found, and anything you couldn't verify.
