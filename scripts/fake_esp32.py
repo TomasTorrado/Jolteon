@@ -13,6 +13,7 @@ def drift(value, low, high, step):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--interval", type=float, default=10, help="seconds between lines")
+    parser.add_argument("--bad-lines", action="store_true", help="sometimes print a broken line")
     args = parser.parse_args()
 
     # Starting values (middle of each range)
@@ -42,7 +43,11 @@ def main():
             "bv": round(bv, 2), "bi": round(bi, 1),
             "mah": round(mah, 1), "wh": round(wh, 2),
         }
-        print(json.dumps(line, separators=(",", ":")), flush=True)
+        text = json.dumps(line, separators=(",", ":"))
+        if args.bad_lines and random.random() < 0.2:
+            # Break ~1 in 5 lines: cut it off, rename a key, or make gv non-numeric
+            text = random.choice([text[:25], text.replace('"bi"', '"xx"'), text.replace('"gv":', '"gv":"?","_":')])
+        print(text, flush=True)
 
         seq += 1
         up += args.interval
@@ -50,4 +55,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass  # Ctrl+C: exit quietly, no traceback
