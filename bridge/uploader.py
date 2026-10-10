@@ -35,6 +35,9 @@ def upload_pending(client, db_path=db.DEFAULT_DB_PATH, batch_size=100):
     rows = [{name: row[name] for name in db.COLUMNS} for row in pending]
 
     try:
+        # Test switch: SIMULATE_OFFLINE=1 makes every upload fail like a dead Wi-Fi would (read each call)
+        if os.getenv("SIMULATE_OFFLINE") == "1":
+            raise ConnectionError("SIMULATE_OFFLINE is on")
         # One request for the whole batch. A seq already in Supabase is skipped, not duplicated.
         client.table("readings").upsert(rows, on_conflict="seq", ignore_duplicates=True).execute()
     except Exception as e:

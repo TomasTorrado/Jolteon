@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-10 12:54",
+  "machine": "Apple M4 (Mac16,1), macOS 26.5.2, Python 3.14.7",
+  "fuzz": {
+    "lines_processed": 10000,
+    "corrupted_lines": 1000,
+    "good_accepted": 9000,
+    "bad_rejected": 1000,
+    "wrong_verdicts": 0,
+    "crashes": 0,
+    "lines_per_second": 233159
+  },
+  "outage": {
+    "offline_readings_per_run": 300,
+    "runs": [
+      {
+        "generated": 340,
+        "in_supabase": 340,
+        "lost": 0,
+        "duplicates": 0,
+        "backlog_size": 301,
+        "drain_seconds": 0.29
+      },
+      {
+        "generated": 340,
+        "in_supabase": 340,
+        "lost": 0,
+        "duplicates": 0,
+        "backlog_size": 301,
+        "drain_seconds": 0.27
+      },
+      {
+        "generated": 340,
+        "in_supabase": 340,
+        "lost": 0,
+        "duplicates": 0,
+        "backlog_size": 301,
+        "drain_seconds": 0.41
+      },
+      {
+        "generated": 340,
+        "in_supabase": 340,
+        "lost": 0,
+        "duplicates": 0,
+        "backlog_size": 301,
+        "drain_seconds": 0.38
+      },
+      {
+        "generated": 340,
+        "in_supabase": 340,
+        "lost": 0,
+        "duplicates": 0,
+        "backlog_size": 301,
+        "drain_seconds": 0.34
+      }
+    ],
+    "totals": {
+      "generated": 1700,
+      "in_supabase": 1700,
+      "lost": 0,
+      "duplicates": 0,
+      "max_drain_seconds": 0.41
+    }
+  },
+  "restarts": {
+    "restarts": 20,
+    "readings_expected": 316,
+    "readings_resent_after_restart": 110,
+    "in_supabase": 316,
+    "duplicates": 0,
+    "missing": 0
+  },
+  "latency": {
+    "readings": 100,
+    "p50_ms": 139,
+    "p95_ms": 230,
+    "max_ms": 655
+  },
+  "bench_api": {
+    "rows_loaded": 10800,
+    "calls_per_endpoint": 50,
+    "endpoints": {
+      "/api/health": {
+        "p50_ms": 0,
+        "p95_ms": 1
+      },
+      "/api/latest": {
+        "p50_ms": 60,
+        "p95_ms": 134
+      },
+      "/api/summary": {
+        "p50_ms": 242,
+        "p95_ms": 299
+      },
+      "/api/readings?max_points=2000": {
+        "p50_ms": 1428,
+        "p95_ms": 1652
+      }
+    },
+    "readings_payload": {
+      "full_rows": 10800,
+      "full_kb": 2469,
+      "downsampled_rows": 1801,
+      "downsampled_kb": 412,
+      "reduction_pct": 83.3
+    }
+  }
+}
