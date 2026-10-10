@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Chart from './Chart';
-import { useDashboardData, useReadings, WINDOWS } from './useDashboardData';
+import { PERIOD_MS, useDashboardData, useReadings, WINDOWS } from './useDashboardData';
 import logo from './assets/jolteon-logo.png';
 import trio from './assets/eeveelutions.png';
 import './dashboard.css';
@@ -188,7 +188,10 @@ export default function Dashboard() {
   } else if (!L) {
     status = 'off';
     statusText = 'Waiting for first reading';
-  } else if ((now - Date.parse(L.ts)) / 1000 > 20) {
+    // Three missed packets. Derived from PERIOD_MS rather than hardcoded, so
+    // changing the write cadence keeps this in step: one late reading is
+    // normal, three in a row means the bridge really has stopped.
+  } else if (now - Date.parse(L.ts) > 3 * PERIOD_MS) {
     status = 'off';
     statusText = 'No new data';
   }

@@ -274,7 +274,8 @@ long windows both correct on peaks and far cheaper on Supabase. Purely additive 
 
 ## BUG: a mid-demo ESP32 reboot silently stops all data capture
 
-**Confirmed by test, affects both SQLite and Supabase. This can kill the live demo.**
+**MOSTLY FIXED IN FIRMWARE (verified 2026-10-10). Read the update at the end of this
+section before acting on the description below.**
 
 `bridge/local_db.py:88` declares `seq INTEGER NOT NULL UNIQUE` and `save_reading` uses
 `INSERT OR IGNORE`. `seq` is the ESP32's packet counter, which **restarts at 0 on every
@@ -305,11 +306,32 @@ This is the bridge owner's call — it is a contract change touching `contract.p
 backwards between polls and surface a "sensor restarted" warning rather than drawing a
 cliff in the chart.
 
+### UPDATE: `firmware/jolteon_esp32/` already prevents this
+
+The sketch persists `seq`, `charge_mah` and `energy_wh` to flash (`Preferences`) every
+`SAVE_EVERY = 6` lines, and on boot resumes at **`savedSeq + SAVE_EVERY`**
+(`jolteon_esp32.ino:157`). Because at most 6 lines can have been sent since the last
+save, the resumed counter is always *ahead* of every `seq` already stored -- a reboot
+leaves a small gap in `seq` instead of reusing numbers, so nothing collides and nothing
+is silently discarded. The cumulative totals survive the reboot too, so the charts do
+not step backwards either.
+
+**The footgun that remains is the serial `RESET` command**, which zeroes `seq` and the
+totals. After a RESET, every new reading collides with the rows already stored and is
+dropped exactly as described above. The firmware's own message says it:
+"Clear the readings table before the real run." So: **RESET the board and clear both
+tables together, never one without the other.**
+
+The `UNIQUE`/`on_conflict` design is therefore no longer a live demo risk, but it is
+still fragile -- it remains worth replacing `seq` with `(session_id, seq)` or `(seq, ts)`
+if the contract is ever revisited.
+
 ## Frontend notes
 
-- **No WebSocket / SSE.** The dashboard must **poll**. Readings arrive every ~10 s, so
-  poll `/api/latest` + `/api/summary` on a ~5 s interval, and grow the chart with
-  `/api/readings?since=<last ts>` rather than refetching the whole history.
+- **No WebSocket / SSE.** The dashboard must **poll**. Readings arrive every ~10 s, and
+  the dashboard polls on that same cadence, **phase-locked to the data** rather than on a
+  fixed timer -- see "Polling load" below for why a plain 10 s timer is not enough. Grow
+  the chart with `/api/readings?since=<last ts>` rather than refetching the whole history.
 - **Timestamps are UTC.** `new Date(ts)` parses both the bridge's
   `2026-10-10T14:32:10.123456+00:00` and Supabase's `timestamptz` output; render in local time.
 - **Signed current/power.** `batt_ma` / `batt_w` flip negative on discharge. Charts need a
@@ -368,10 +390,12 @@ Working against `DATA_SOURCE=sqlite` means the frontend needs no Supabase keys a
 
 ## Known gaps
 
-- The local `.env` has only `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. With the default
-  `DATA_SOURCE=supabase` the API **fails at import** (`make_source()` raises at module
-  level). Either add `SUPABASE_PUBLISHABLE_KEY` or set `DATA_SOURCE=sqlite`.
-- `db/` has no schema SQL checked in — the Supabase `readings` table was created out of band.
+- ~~The local `.env` is missing `SUPABASE_PUBLISHABLE_KEY`.~~ **Fixed.** All three keys
+  are present, and `DATA_SOURCE=supabase` was verified working end to end on 2026-10-10:
+  `/api/health` returns `{"ok":true,"source":"supabase"}`.
+- ~~`db/` has no schema SQL checked in.~~ **Added** `db/schema.sql`, written from
+  `bridge/local_db.py:COLUMNS` and checked against the live table. Note it documents the
+  live table rather than having created it: the DDL itself has not been executed.
 - The API has no explicit Pydantic response models (the OpenAPI schemas are empty `{}`),
   so `/docs` documents the paths but not the field shapes. This file is the contract.
 - Nothing serves `web/` in production yet; no deployment target chosen.
@@ -395,7 +419,7 @@ web/
     Dashboard.jsx       cards, header, phone tab, raw table. PHONE_WH = 13.9 lives here
     Chart.jsx           SVG line chart, y-axis auto-zooms to data (deliberate)
     api.js              the 4 GET wrappers
-    useDashboardData.js polling + WINDOWS (live 2s / 12h+24h 10s)
+    useDashboardData.js phase-locked polling + WINDOWS (all three windows 10s)
     dashboard.css       neumorphic tiles, @imports Nunito itself
     assets/             jolteon-logo.png, eeveelutions.png
 ```
@@ -425,11 +449,28 @@ exported but unused.
 ### Polling load
 
 Each chart card polls independently (own `useState` for its window, own `useReadings`),
-which is what keeps the three tab groups from affecting each other. With all three on
-Live that is 3 req / 2 s, plus `/api/latest` every 2 s and `/api/summary` every 10 s —
-about **2 requests/second**. Negligible against SQLite. Against Supabase a card on the
-24 h tab costs ~9 paged round-trips every 10 s, so prefer `DATA_SOURCE=sqlite` while
-developing. Polling pauses automatically while the tab is hidden.
+which is what keeps the three tab groups from affecting each other.
+
+Everything polls at `PERIOD_MS` (10 s) — the rate the bridge actually writes rows — so no
+request can return data the previous one already had. But a *plain* 10 s timer is not
+enough: nothing fixes where in the writer's 10 s cycle the request lands, and if it
+settles just before each write the dashboard shows 10 s old data forever (measured: up to
+7.6 s average staleness depending on the starting phase). So the three live polls
+(`/api/latest`, `/api/summary`, and a card on the **Live** tab) are **phase-locked** —
+`usePoll` takes a `keyOf` that returns the newest row's identity, looks again every 1 s
+until it catches the moment a new row appears, then sleeps until just before the next one
+is due. Steady state is **2 requests per row with the newest row ~0.1-0.9 s old**,
+measured across every starting phase, versus 5 requests per row for the old 2 s timer.
+Three guards: the next wake is timed from when the request was *sent* (otherwise response
+latency walks the lock forward until it overshoots), 12 fruitless looks fall back to the
+plain timer until something new appears (so a dead bridge costs ~48 requests / 5 min, not
+~300), and `seq` is paired with `ts` as the identity because `seq` restarts at 0 on reboot.
+
+The **12 h / 24 h** cards stay on the plain 10 s timer on purpose: they exist to show
+judges the accumulated history, where a point arriving a few seconds late costs nothing
+and one request per period is cheaper. Against Supabase a card on the 24 h tab still
+costs ~9 paged round-trips every 10 s, so prefer `DATA_SOURCE=sqlite` while developing.
+Polling pauses automatically while the tab is hidden.
 
 ### Layout breakpoints
 
@@ -446,9 +487,9 @@ single column below that and on phones.
 | 2 | `max_points` downsamples evenly rather than truncating | **Pass.** 24 h -> 293 of 300 points spanning the full 24.0 h |
 | 3 | Readings oldest first | **Pass.** `ORDER BY ts, seq`, confirmed ascending |
 | 4 | `/api/latest` returns `null` on an empty table | **Pass.** `null` with HTTP 200; `/api/summary` zeros, `/api/readings` `[]` |
-| 5 | Timestamps ISO 8601 with a zone | **Pass** for SQLite (`+00:00`). Supabase side **unverified** - no publishable key available |
+| 5 | Timestamps ISO 8601 with a zone | **Pass** for both. Supabase verified 2026-10-10 by round-tripping a row: the bridge sends `2026-10-10T21:09:01.194047+00:00` and reads back that exact string |
 | 6 | `batt_ma`/`batt_w` signed, + = charging | **Pass** |
-| 7 | `/api/latest` staleness vs the 20 s "No new data" threshold | **Pass.** Under 1 s on SQLite. Real ESP32 interval is well inside 20 s |
+| 7 | `/api/latest` staleness vs the 30 s "No new data" threshold | **Pass.** Under 1 s on SQLite. Threshold is 3 missed packets at the 10 s cadence, so one late reading cannot false-positive |
 
 ### Not yet verified visually
 
