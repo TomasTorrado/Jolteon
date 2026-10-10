@@ -6,7 +6,7 @@ Joltean shows how waste heat from a data center could be turned back into usable
 
 **Interactive diagram:** [Cirkit Designer project](https://app.cirkitdesigner.com/project/c7100911-46c1-4ae9-b2e7-7fafb2f43829)
 
-# INSERT IMAGE OF DIAGRAM
+<img width="3000" height="2152" alt="circuit_image (2)" src="https://github.com/user-attachments/assets/8def6de5-b7ac-43b6-b4d3-1df0c4b73df9" />
 
 The diagram uses Cirkit's TEC1-12706 part as a placeholder. The real modules are SP1848-27145 generators.
 
