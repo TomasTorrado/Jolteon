@@ -14,6 +14,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--interval", type=float, default=10, help="seconds between lines")
     parser.add_argument("--bad-lines", action="store_true", help="sometimes print a broken line")
+    parser.add_argument("--reboot-every", type=int, default=0, help="simulate an ESP32 reboot every N lines")
     args = parser.parse_args()
 
     # Starting values (middle of each range)
@@ -22,8 +23,14 @@ def main():
     bv, bi = 4.05, 75.0
     mah, wh = 0.0, 0.0
     seq, up = 0, 0
+    count = 0  # lines printed so far
 
     while True:
+        # Simulated reboot: boot message, uptime restarts, seq resumes 6 ahead (totals survive, like the firmware)
+        if args.reboot_every and count and count % args.reboot_every == 0:
+            print("# boot (simulated reboot)", flush=True)
+            up, seq = 0, seq + 6
+        count += 1
         th = drift(th, 45, 60, 0.5)
         tc = drift(tc, 1, 8, 0.3)
         gv = drift(gv, 4.0, 4.5, 0.03)

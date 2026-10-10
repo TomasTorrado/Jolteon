@@ -94,7 +94,7 @@ def analyze(rows, actual_pct):
     energy_wh = chg[-1]["energy_wh"]
     gen_w = [r["gen_w"] for r in chg]
     batt_w = [r["batt_w"] for r in chg]
-    dts = [r["delta_t_c"] for r in chg]
+    dts = [r["delta_t_c"] for r in chg if r["delta_t_c"] is not None]  # None = a temperature probe was missing
     losses = [(r["gen_w"] - r["batt_w"]) / r["gen_w"] for r in chg if r["gen_w"] > 0.001]
 
     # Reboots: uptime_s should only grow; a drop means the ESP32 restarted
@@ -150,7 +150,8 @@ def binned(rows, key, minutes=5):
     t0, size = rows[0]["dt"], minutes * 60
     bins = {}
     for r in rows:
-        bins.setdefault(int((r["dt"] - t0).total_seconds() // size), []).append(r[key])
+        if r[key] is not None:  # skip readings where this value is missing (e.g. a probe was unplugged)
+            bins.setdefault(int((r["dt"] - t0).total_seconds() // size), []).append(r[key])
     xs = range(max(bins) + 1)
     return [(i + 0.5) * size / 3600 for i in xs], [mean(bins[i]) if i in bins else math.nan for i in xs]
 
@@ -187,7 +188,8 @@ def make_charts(rows, out):
 
     fig, ax = plt.subplots(figsize=(12, 6.75), facecolor=SURFACE)
     ax.set_facecolor(SURFACE)
-    ax.scatter([r["delta_t_c"] for r in chg], [r["gen_w"] for r in chg], s=10, color=BLUE, alpha=0.35, linewidths=0)
+    pts = [r for r in chg if r["delta_t_c"] is not None]
+    ax.scatter([r["delta_t_c"] for r in pts], [r["gen_w"] for r in pts], s=10, color=BLUE, alpha=0.35, linewidths=0)
     style(ax, "Generator power vs. ΔT (every charging reading)", "Generator power (W)")
     ax.set_xlabel("ΔT, hot minus cold plate (°C)", fontsize=15, color=TEXT_2)
     fig.tight_layout()

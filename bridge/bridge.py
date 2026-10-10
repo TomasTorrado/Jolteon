@@ -1,19 +1,43 @@
-"""Bridge: read ESP32 serial lines, validate them, save them to SQLite, and upload them to Supabase."""
+"""Bridge: read ESP32 serial lines, validate them, save them to SQLite, and upload them to Supabase.
+
+Input: lines piped into stdin (e.g. from fake_esp32.py), otherwise the ESP32's USB serial port,
+found automatically (or given with --port). The serial connection survives unplugs and reboots.
+"""
 import argparse
 import json
 import logging
 import math
+import os
 import sys
 import time
 from datetime import datetime, timezone
 
 import local_db as db
-from contract import KEY_MAP, PHASE_MAP, RANGES, REQUIRED_KEYS
+from contract import KEY_MAP, LOG_PREFIX, NULLABLE_KEYS, PHASE_MAP, RANGES, REQUIRED_KEYS
 from uploader import make_client, upload_pending
 
 # Warnings go to stderr, so stdout only carries one status line per reading
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("bridge")
+
+# Device-name fragments of USB-serial chips used on ESP32 boards (CP210x = SLAB, CH340 = wchusbserial)
+PORT_PATTERNS = ("usbserial", "usbmodem", "SLAB", "wchusbserial")
+RETRY_SECONDS = 3
+
+
+class Stats:
+    """Counters for the status line and the Ctrl+C summary (the metrics suite will use them later)."""
+
+    def __init__(self):
+        self.good = self.bad = self.uploaded = 0
+        self.reconnects = self.reboots = self.seq_gaps = self.skipped_seq = 0
+        self.last_seq = self.last_up = None   # from the previous valid reading
+        self.last_valid = time.monotonic()     # when the last valid reading arrived (for the watchdog)
+
+
+def stamp():
+    """Local time as HH:MM:SS, for messages you'll read back after a long run."""
+    return datetime.now().strftime("%H:%M:%S")
 
 
 def is_number(value):
@@ -36,9 +60,10 @@ def process_line(line):
         log.warning("not a JSON object, skipped: %r", line)
         return None
 
-    # Every key must be present, and every key except "ph" must be a finite number
+    # Every key must be present; every key except "ph" must be a finite number (th/tc may also be null)
     missing = [k for k in REQUIRED_KEYS if k not in raw]
-    invalid = [k for k in REQUIRED_KEYS if k in raw and k != "ph" and not is_number(raw[k])]
+    invalid = [k for k in REQUIRED_KEYS if k in raw and k != "ph" and not is_number(raw[k])
+               and not (k in NULLABLE_KEYS and raw[k] is None)]
     if missing or invalid:
         log.warning("missing %s / not a valid number %s, skipped: %r", missing, invalid, line)
         return None
@@ -51,43 +76,55 @@ def process_line(line):
     # Derived fields: power in watts (V * mA / 1000) and plate temperature difference
     reading["gen_w"] = round(reading["gen_v"] * reading["gen_ma"] / 1000, 3)
     reading["batt_w"] = round(reading["batt_v"] * reading["batt_ma"] / 1000, 3)
-    reading["delta_t_c"] = round(reading["t_hot_c"] - reading["t_cold_c"], 3)
+    if reading["t_hot_c"] is None or reading["t_cold_c"] is None:
+        reading["delta_t_c"] = None  # can't compute ΔT without both probes
+        log.warning("seq %s: temperature probe missing (th=%s, tc=%s), delta_t_c not computed",
+                    reading["seq"], raw["th"], raw["tc"])
+    else:
+        reading["delta_t_c"] = round(reading["t_hot_c"] - reading["t_cold_c"], 3)
 
     # Out-of-range values are suspicious but kept: real sensors can be odd
     for field, (low, high) in RANGES.items():
-        if not low <= reading[field] <= high:
+        if reading[field] is not None and not low <= reading[field] <= high:
             log.warning("seq %s: %s=%s outside %s..%s", reading["seq"], field, reading[field], low, high)
 
     return reading
 
 
-def read_lines(args):
-    """Yield text lines from the serial port if --port was given, otherwise from stdin."""
-    if args.port:
-        import serial  # pyserial, only needed with a real board
+def check_sequence(reading, stats):
+    """Compare seq and uptime with the previous reading: log seq gaps, seq going backward, and ESP32 reboots."""
+    seq, up = reading["seq"], reading["uptime_s"]
+    if stats.last_seq is not None:
+        if seq < stats.last_seq:
+            log.warning("%s !!! seq went backward from %s to %s. New readings may be dropped as duplicates. "
+                        "Clear the readings table before the real run.", stamp(), stats.last_seq, seq)
+        elif seq > stats.last_seq + 1:  # normal after a reboot: the firmware resumes seq a little ahead
+            stats.seq_gaps += 1
+            stats.skipped_seq += seq - stats.last_seq - 1
+            log.info("%s gap of %s readings (seq %s -> %s)", stamp(), seq - stats.last_seq - 1, stats.last_seq, seq)
+    if stats.last_up is not None and up < stats.last_up:  # uptime only drops when the ESP32 restarts
+        stats.reboots += 1
+        log.info("%s ESP32 reboot #%s detected (uptime %s s -> %s s)", stamp(), stats.reboots, stats.last_up, up)
+    stats.last_seq, stats.last_up = seq, up
 
-        # Outer loop: (re)open the port, so an unplugged cable doesn't end a long run
-        while True:
-            try:
-                # Create the port without opening it, so we can set DTR/RTS first.
-                # These two lines trigger the ESP32's auto-reset; keeping them off means
-                # opening the port doesn't reboot the board (and restart seq at 0).
-                port = serial.Serial(baudrate=args.baud, timeout=1)
-                port.port = args.port
-                port.dtr = False
-                port.rts = False
-                port.open()
-                with port:
-                    log.info("connected to %s", args.port)
-                    while True:
-                        data = port.readline()  # b"" if nothing arrived within the timeout
-                        if data:
-                            yield data.decode("utf-8", errors="replace")
-            except serial.SerialException as e:
-                log.warning("serial error (%s), retrying in 3 s", e)
-                time.sleep(3)
-    else:
-        yield from sys.stdin
+
+def find_port(preferred=None):
+    """Return `preferred` if it exists, otherwise the first port that looks like an ESP32, or None."""
+    from serial.tools import list_ports
+
+    if preferred and os.path.exists(preferred):  # --port given and currently plugged in
+        return preferred
+    devices = sorted(p.device for p in list_ports.comports())
+    return next((d for d in devices if any(pattern in d for pattern in PORT_PATTERNS)), None)
+
+
+def list_ports_and_exit():
+    from serial.tools import list_ports
+
+    for p in sorted(list_ports.comports(), key=lambda p: p.device):
+        mark = "  <- looks like an ESP32" if any(pattern in p.device for pattern in PORT_PATTERNS) else ""
+        print(f"{p.device}  ({p.description}){mark}")
+    sys.exit(0)
 
 
 def upload_backlog(client):
@@ -101,36 +138,101 @@ def upload_backlog(client):
     return total
 
 
+def wait_for_retry(client, stats):
+    """Pause between reconnect attempts, but keep uploading pending rows meanwhile."""
+    if client:
+        stats.uploaded += upload_backlog(client)
+    time.sleep(RETRY_SECONDS)
+
+
+def read_serial(args, stats, client):
+    """Yield lines from the ESP32 forever: (re)find and (re)open the port after unplugs, errors and silence."""
+    import serial  # pyserial, only needed with a real board
+
+    connected_once = False
+    last_wait_msg = 0
+    while True:
+        device = find_port(args.port)  # --port if it exists, otherwise auto-detect
+        if device is None:
+            if time.monotonic() - last_wait_msg > 60:  # say it once a minute, not every 3 s
+                log.warning("%s waiting for the ESP32 (no USB serial port found), retrying every %s s",
+                            stamp(), RETRY_SECONDS)
+                last_wait_msg = time.monotonic()
+            wait_for_retry(client, stats)
+            continue
+
+        # Opening the port resets the ESP32 on our board (the firmware resumes seq and totals from flash).
+        # DTR/RTS off avoids that reset on boards where it works; it's harmless where it doesn't.
+        port = serial.Serial(baudrate=args.baud, timeout=1)  # 1 s read timeout, so the watchdog can check
+        port.port, port.dtr, port.rts = device, False, False
+        try:
+            port.open()
+            if connected_once:
+                stats.reconnects += 1
+            connected_once, last_wait_msg = True, 0
+            log.info("%s connected to %s%s", stamp(), device, " (reconnected)" if stats.reconnects else "")
+            stats.last_valid = time.monotonic()
+            while True:
+                data = port.readline()  # b"" if nothing arrived within the 1 s timeout
+                if data:
+                    yield data.decode("utf-8", errors="replace")
+                # Watchdog: no valid reading for too long -> reopen the port (this also resets a frozen ESP32)
+                if time.monotonic() - stats.last_valid > args.watchdog:
+                    log.warning("%s no valid reading for %s s, reopening %s", stamp(), args.watchdog, device)
+                    break
+        except (serial.SerialException, OSError) as e:  # cable unplugged, port busy, ...
+            log.warning("%s serial error on %s (%s), retrying in %s s", stamp(), device, e, RETRY_SECONDS)
+            wait_for_retry(client, stats)
+        finally:
+            port.close()
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", help="serial port, e.g. /dev/cu.usbserial-0001 (default: read stdin)")
+    parser.add_argument("--port", help="preferred serial port, e.g. /dev/cu.usbserial-0001 (default: auto-detect)")
     parser.add_argument("--baud", type=int, default=115200, help="serial baud rate")
+    parser.add_argument("--watchdog", type=int, default=60, help="reopen the port after this many seconds without a valid reading")
+    parser.add_argument("--list-ports", action="store_true", help="print all serial ports and exit")
     parser.add_argument("--no-upload", action="store_true", help="only save to SQLite (offline testing)")
     args = parser.parse_args()
+    if args.list_ports:
+        list_ports_and_exit()
 
     db.init_db()
     client = None if args.no_upload else make_client()
+    stats = Stats()
 
-    good = bad = uploaded = 0
+    # Piped input (e.g. fake_esp32.py | bridge.py) reads stdin exactly as before; otherwise use the serial port
+    use_serial = args.port or sys.stdin.isatty()
+    lines = read_serial(args, stats, client) if use_serial else sys.stdin
+
     try:
-        for line in read_lines(args):
+        for line in lines:
             if not line.strip():
                 continue  # empty lines are neither good nor bad
+            if line.lstrip().startswith(LOG_PREFIX):  # a message from the ESP32, not a reading
+                print(f"{stamp()} [esp32] {line.strip()}", file=sys.stderr, flush=True)
+                continue
             reading = process_line(line)
             if reading is None:
-                bad += 1
+                stats.bad += 1
                 continue
-            good += 1
+            stats.good += 1
+            stats.last_valid = time.monotonic()
+            check_sequence(reading, stats)
 
             # Save locally first, so the reading is safe even if the upload fails
             status = "saved" if db.save_reading(reading) else "duplicate"  # duplicate = seq already in SQLite
             if client:
-                uploaded += upload_backlog(client)
+                stats.uploaded += upload_backlog(client)
             print(f"{status} seq={reading['seq']}  energy={reading['energy_wh']:.3f} Wh"
-                  f"  uploaded={uploaded}  pending={db.count_pending()}", flush=True)
+                  f"  uploaded={stats.uploaded}  pending={db.count_pending()}"
+                  f"  reconnects={stats.reconnects}  reboots={stats.reboots}  gaps={stats.seq_gaps}", flush=True)
     except KeyboardInterrupt:
         pass
-    print(f"\nStopped. good={good} bad={bad}", file=sys.stderr)
+    print(f"\nStopped. good={stats.good} bad={stats.bad}  reconnects={stats.reconnects}  "
+          f"reboots={stats.reboots}  seq_gaps={stats.seq_gaps} (skipped {stats.skipped_seq} seq values)",
+          file=sys.stderr)
 
 
 if __name__ == "__main__":

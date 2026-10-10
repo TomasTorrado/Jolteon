@@ -21,6 +21,12 @@ PHASE_MAP = {"chg": "charging", "dis": "discharging"}
 # Every serial line must have all of these keys
 REQUIRED_KEYS = list(KEY_MAP)
 
+# Keys that may be null: the firmware sends null when a temperature probe is missing
+NULLABLE_KEYS = ["th", "tc"]
+
+# Lines starting with this are log messages from the ESP32 (boot, errors, status), not readings
+LOG_PREFIX = "#"
+
 # Expected (min, max) per clean field; values outside only trigger a warning
 RANGES = {
     "t_hot_c": (0, 90),

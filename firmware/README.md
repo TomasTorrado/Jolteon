@@ -30,7 +30,7 @@ Each INA219 gets exactly one wire on VIN+ and one on VIN−. The screw terminals
 | INA219 #1 (TEG side) | SDA GPIO 21, SCL GPIO 22 | I²C bus 1 (`Wire`), address 0x40 |
 | INA219 #2 (battery side) | SDA GPIO 25, SCL GPIO 26 | I²C bus 2 (`Wire1`), address 0x40 |
 | DS18B20 hot plate | DAT GPIO 4 | 4.7 kΩ pull-up from DAT to 3V3 |
-| DS18B20 cold plate | DAT GPIO 27 | 4.7 kΩ pull-up from DAT to 3V3. GPIO 5 also works; change `COLD_PROBE_PIN`. |
+| DS18B20 cold plate | DAT GPIO 5 | 4.7 kΩ pull-up from DAT to 3V3 (`COLD_PROBE_PIN = 5`). |
 
 All sensor VCC pins go to ESP32 3V3, and all GND pins go to the common ground. The two INA219s sit on separate I²C buses, so both stay at 0x40 and neither A0 pad needs soldering. Power the ESP32 from USB only, never from the battery pack.
 
