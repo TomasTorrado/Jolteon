@@ -1,0 +1,35 @@
+/* Page-level reset for the dashboard scaffold.
+ *
+ * dashboard.css deliberately scopes every rule under .jl and never touches
+ * html/body, so without this the browser's default `body { margin: 8px }` shows
+ * as a pale frame around the panel. It is invisible against the light theme
+ * (--bg: #ebeef5, nearly white) but obvious against the dark one (#262932).
+ */
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Paint the page canvas to match the active theme, so the edges and the macOS
+ * overscroll bounce match as well. A background on the root element propagates
+ * to the whole canvas, which is what covers overscroll.
+ *
+ * `color-scheme` additionally switches the scrollbar and any native form
+ * controls to dark, so no white chrome is left around the UI.
+ *
+ * The theme is set as data-theme on the .jl element (see Dashboard.jsx), which
+ * is a descendant of <html> -- hence :has() to read it from the root.
+ *
+ * These two values mirror --bg in dashboard.css (.jl and .jl[data-theme='dark']).
+ * dashboard.css is the source of truth: if the palette changes, update both.
+ */
+html {
+  background: #ebeef5;
+  color-scheme: light;
+}
+
+html:has(.jl[data-theme='dark']) {
+  background: #262932;
+  color-scheme: dark;
+}
