@@ -15,7 +15,9 @@ def corrupt(line):
     if kind == "missing_key":
         del raw[random.choice(list(raw))]
     elif kind == "wrong_type":
-        raw[random.choice(["th", "tc", "gv", "gi", "bv", "bi", "mah", "wh"])] = random.choice(["hot", True, None, float("nan")])
+        key = random.choice(["th", "tc", "gv", "gi", "bv", "bi", "mah", "wh"])
+        # null is allowed for th/tc (a missing temperature probe), so it only counts as corruption elsewhere
+        raw[key] = random.choice(["hot", True, float("nan")] + ([] if key in ("th", "tc") else [None]))
     else:
         return ""
     return json.dumps(raw)
