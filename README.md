@@ -5,7 +5,7 @@ A KnightHacks project showing how waste heat from a data center could be capture
 An ESP32 measures temperatures, voltages and currents and sends one JSON line over USB every 10 seconds:
 
 ```
-ESP32 --USB serial--> Python bridge --> SQLite backup --> Postgres (Lakebase) --> FastAPI --> React dashboard
+ESP32 --USB serial--> Python bridge --> SQLite backup --> Supabase (Postgres) --> FastAPI --> React dashboard
 ```
 
 ## Build plan
@@ -13,7 +13,7 @@ ESP32 --USB serial--> Python bridge --> SQLite backup --> Postgres (Lakebase) --
 1. Repo skeleton + fake ESP32 data generator
 2. Bridge: read and validate serial lines, print clean readings
 3. Bridge: save readings to local SQLite
-4. Database table in Lakebase + uploader
+4. Database table in Supabase + uploader
 5. FastAPI backend serving the readings
 6. React dashboard: summary cards, then charts
 
@@ -23,7 +23,7 @@ ESP32 --USB serial--> Python bridge --> SQLite backup --> Postgres (Lakebase) --
 - `api/` – FastAPI backend that serves readings to the dashboard.
 - `web/` – React dashboard with live charts.
 - `scripts/` – Helper scripts, such as the fake ESP32 data generator.
-- `db/` – Database schema (SQL) for Lakebase.
+- `db/` – Database schema (SQL) for Supabase.
 
 ## Commands
 
