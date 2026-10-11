@@ -430,7 +430,56 @@ web/
                         newer than any zip drop; never overwrite from the zip
     dashboard.css       poster style, 4 [data-theme] blocks, @imports 3 Google Fonts
     assets/             jolteon-logo.png, eeveelutions.png
+    Scale.jsx           OURS: the Scale tab (curve fit, calculator, sensor framing)
+    scaleModel.js       OURS: pure fit + projection math, no React
+    CurveChart.jsx      OURS: ΔT-vs-power scatter with the fitted curve
+    scale.css           OURS: Scale tab styles, theme tokens only
 ```
+
+### Scale view (`Scale` tab)
+
+Shows what the rig's real data means at data-center scale. Three cards:
+
+1. **What we measured**: every reading's `gen_w` against `delta_t_c`, with a power-law
+   fit `P = a · ΔT^n` (whole rig, 4 modules). The fit goes through the **median of each
+   5 °C ΔT bin** (bins with fewer than 3 readings are dropped) using least squares on
+   log-log, so thermal lag and noisy single readings don't drag it. Readings with a null
+   probe or `gen_w <= 0.01` are excluded. Solid curve = measured ΔT range, dashed =
+   extrapolation. Hovering shows the curve's value at that ΔT next to the median of
+   the real readings in the same bin (`binAt`); clicking sets the calculator's ΔT.
+2. **Scale it up**: presets (air-cooled 15 °C, liquid-cooled 30 °C, our rig = median
+   measured ΔT), a ΔT slider, racks (1-2-5 log steps to 10,000), servers per rack (30),
+   modules per server (4). An "Extrapolated" tag appears outside the measured ΔT range.
+3. **Self-powered sensors**: rack power divided by a sensor budget (1/5/10 mW, default
+   10). This is the headline pitch: at realistic data-center ΔT the TEGs can't run the
+   facility, but they can power its own monitoring.
+
+The framing is **"not a grid fix, a building block"**: a **Why it matters** card walks
+heat given off → share TEGs recover → battery-free sensors → better-targeted cooling →
+less grid load, and compares TEGs with direct heat reuse (homes warmed via district
+heating, assuming `HOME_HEAT_MWH_PER_YEAR = 15`, labelled on the page). The calculator
+also takes power per server (default 500 W) and shows facility heat plus the share
+recovered, which is deliberately on screen (~0.008 % at the liquid-cooled defaults).
+
+A collapsible **Show the math** card below them walks through every step (fit, rig
+output, per module, per rack, facility, energy, phones, sensors) with the live slider
+values substituted, so judges can check each number by hand.
+
+Data comes from `useAllReadings()`: `/api/readings` since the epoch with
+`max_points=100000` (no downsampling) on a plain 60 s timer. No backend changes.
+
+The fit re-runs as readings arrive, so the numbers drift: on 2026-10-11 production
+went from n ≈ 2.4 (834 readings, ≈ 80 sensors per rack at ΔT 30 °C with the defaults)
+to n ≈ 2.1 (939 readings, ≈ 115 sensors per rack) within the same session. The exponent is above the textbook 2
+because the battery holds the TEG voltage down (TEG V ≈ battery V + one diode drop),
+so every projection is a **lower bound**; the page says so in its footer.
+
+**macOS gotcha:** the math module is `scaleModel.js`, not `scale.js`. On a
+case-insensitive file system Vite resolves `./Scale` to `scale.js`, and the build fails.
+
+**Testing note:** polling pauses while `document.hidden` is true, and browser-automation
+tabs often report hidden, so the page sits on "Connecting…". Override `document.hidden`
+and dispatch `visibilitychange` to test there; real visible tabs are unaffected.
 
 ### Run it
 

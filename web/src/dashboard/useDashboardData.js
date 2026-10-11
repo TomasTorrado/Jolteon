@@ -161,6 +161,14 @@ export function useReadings(win) {
   );
 }
 
+// Every reading ever stored, for the Scale view's curve fit. The fit barely
+// moves from one row to the next, so a slow plain timer is plenty; a high
+// max_points stops the API from downsampling (the fit wants every reading).
+const ALL_EVERY_MS = 60e3;
+export function useAllReadings() {
+  return usePoll((signal) => getReadings(0, 100000, signal), ALL_EVERY_MS, []);
+}
+
 export function useDashboardData() {
   const latest = usePoll(getLatest, PERIOD_MS, [], rowKey);
   const summary = usePoll(getSummary, PERIOD_MS, [], summaryKey);

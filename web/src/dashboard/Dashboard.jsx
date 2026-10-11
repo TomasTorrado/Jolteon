@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Chart from './Chart';
+import Scale from './Scale';
 import { PERIOD_MS, useDashboardData, useReadings, WINDOWS } from './useDashboardData';
 import logo from './assets/jolteon-logo.png';
 import trio from './assets/eeveelutions.png';
@@ -264,7 +265,7 @@ function ChartCard({ title, big, unit, band, series, tip, rows }) {
 
 export default function Dashboard() {
   const [theme, setTheme] = useTheme();
-  const [view, setView] = useState('charts'); // 'charts' | 'phone'
+  const [view, setView] = useState('charts'); // 'charts' | 'phone' | 'scale'
   const [rawOpen, setRawOpen] = useState(false);
   const now = useNow(5000);
 
@@ -394,6 +395,7 @@ export default function Dashboard() {
           options={[
             { key: 'charts', label: 'Charts' },
             { key: 'phone', label: 'Phone' },
+            { key: 'scale', label: 'Scale' },
           ]}
         />
 
@@ -417,6 +419,8 @@ export default function Dashboard() {
             </div>
           </Card>
         )}
+
+        {view === 'scale' && <Scale Card={Card} Rows={Rows} Segmented={Segmented} phoneWh={PHONE_WH} />}
 
         {view === 'charts' && (
           <>
