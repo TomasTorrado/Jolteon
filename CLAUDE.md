@@ -405,11 +405,18 @@ Working against `DATA_SOURCE=sqlite` means the frontend needs no Supabase keys a
 ## The dashboard (`web/`)
 
 Vite + React 18, no chart library — the charts are hand-rolled SVG in `Chart.jsx` on
-purpose. Integrated from `jolteon-dashboard.zip` on 2026-10-10.
+purpose. Integrated from `jolteon-dashboard.zip` on 2026-10-10, then updated in place from
+`jolteon-dashboard (3).zip` the same day -- a redesign of `Dashboard.jsx` + `dashboard.css`
+only (poster style: label strips, paper grain, sparkles, 4 themes). `Chart.jsx`, `api.js`
+and both assets were byte-identical in that drop and were not touched.
+
+**That zip also ships the ORIGINAL `useDashboardData.js`** (2 s `/api/latest`, 2 s live
+window, plain timer). It was deliberately NOT copied -- it would revert the phase-locked
+polling below. Any future drop of this zip: take the design files, keep ours.
 
 ```
 web/
-  index.html            Nunito preconnect + <link>, #root, /src/main.jsx
+  index.html            preconnect + <link> for all 3 Google Fonts, #root, /src/main.jsx
   package.json          react 18.3.1, react-dom 18.3.1, vite 5.4.21, @vitejs/plugin-react 4.3.4
   vite.config.js        port 5173; proxies /api -> VITE_API_TARGET (default 127.0.0.1:8000)
   .env.example          VITE_API_URL / VITE_API_TARGET, both optional
@@ -419,8 +426,9 @@ web/
     Dashboard.jsx       cards, header, phone tab, raw table. PHONE_WH = 13.9 lives here
     Chart.jsx           SVG line chart, y-axis auto-zooms to data (deliberate)
     api.js              the 4 GET wrappers
-    useDashboardData.js phase-locked polling + WINDOWS (all three windows 10s)
-    dashboard.css       neumorphic tiles, @imports Nunito itself
+    useDashboardData.js phase-locked polling + WINDOWS (all three windows 10s) -- OURS,
+                        newer than any zip drop; never overwrite from the zip
+    dashboard.css       poster style, 4 [data-theme] blocks, @imports 3 Google Fonts
     assets/             jolteon-logo.png, eeveelutions.png
 ```
 
@@ -494,26 +502,77 @@ single column below that and on phones.
 ### Not yet verified visually
 
 The browser extension was not connected during integration, so the **rendered** page was
-never eyeballed: theme toggle, hover tooltips, the ring, the moving bolt and the
+never eyeballed: the theme dropdown, hover tooltips, the ring, the sparkling bolt and the
 responsive stacking are verified only by reading the code and the CSS. The production
-build compiles clean with no warnings and every module and asset resolves over the dev
-server.
+build compiles clean with no warnings, every module and asset resolves over the dev
+server, and every `jl-*` class used in the JSX has a rule in `dashboard.css`.
 
-### Fixed: white frame around the UI in dark mode
+### Header layout: four local edits to `dashboard.css`
+
+The zip's header let the logo wrap onto its own line above the title whenever the
+main box got tight, which roughly doubled that box's height (~284 px vs ~178 px).
+Changed, and worth re-applying if the zip is ever dropped again:
+
+| Rule | Was | Now | Why |
+| --- | --- | --- | --- |
+| `.jl-hbox-main .jl-hbox-in` | `flex-wrap: wrap` | `nowrap` | keeps the logo beside the J |
+| `.jl-logo` | `92px`, `flex: 0 1 92px` | `68px`, `flex: 0 0 auto` | smaller, and never squashed |
+| `.jl-header h1` | `64px` | `clamp(34px, 5.8vw, 64px)` | the title gives way instead of wrapping; 5.8vw hits 64 px at ~1103 px and the wrapper caps at 1100 px, so the size is unchanged in practice |
+| `.jl-trio` | `height: 112px` | `120px` + `padding: 4px 6px` + `border-box` | same 112 px of artwork, plus margin (see below) |
+
+Plus a `max-width: 640px` query that restores `flex-wrap: wrap` for phones, where
+there is no width left to shrink the title into.
+
+**`eeveelutions.png` has been edited: Glaceon's right ear was clipped.** The zip's
+artwork is cropped flush to the ink on its left, top and right edges, and on the
+right that crop cuts straight through Glaceon's right ear flap. Measured, as solid
+ink height per column:
+
+```
+x=552: 116px   x=554: 101px   x=556: 34px
+x=553: 112px   x=555:  48px   x=557:  0px   <- gone, 3px short of the edge
+```
+
+A flap 116 px tall that genuinely tapered to a point would close over ~50 columns,
+not three; that collapse is a vertical cut with a soft feather painted over it.
+
+The fix applied: an elliptical alpha falloff across x=524..556 that rounds the
+existing silhouette off into a believable tip. It costs a few pixels of ear and
+invents nothing. The content now ends at x=555 with clear canvas beyond, and the
+`.jl-trio` padding keeps it off the dashed border. Rebuilding the missing lobe
+outright was tried first and looked like a blob stuck to the side -- don't.
+
+`git checkout -- web/src/dashboard/assets/eeveelutions.png` restores the original.
+**A future drop of the zip will silently bring the clipped version back.** The real
+cure is an uncropped source image, which would make this edit unnecessary.
+
+### Themes
+
+Four, chosen from the dropdown next to the trio image and saved in `localStorage` under
+`jolteon-theme`: **jolteon** (default, dark brown), **flareon** (maroon), **glaceon**
+(navy), **light** (cream). They set surface colours only -- the data colours (energy gold,
+power orange, hot red, cold blue) are identical in every theme except Light, where they
+are darkened for contrast. To add one, add a `[data-theme='...']` block at the top of
+`dashboard.css`, an entry to `THEMES` in `Dashboard.jsx`, **and a rule in `global.css`**
+(see below). A value saved by the old two-way toggle (`dark`) is migrated to `jolteon`.
+
+### Fixed: white frame around the UI
 
 `dashboard.css` scopes every rule under `.jl` and never touches `html`/`body`, so the
 browser's default `body { margin: 8px }` showed as a pale frame around the panel --
-invisible against the light `--bg: #ebeef5`, obvious against the dark `#262932`.
+obvious against the dark poster themes.
 
 Fixed in **`web/src/global.css`** (imported by `main.jsx`), not in the shipped design
 files. It resets the `html`/`body` margin, paints the root background to match the active
 theme so the edges and the macOS overscroll bounce match, and sets `color-scheme` so the
 scrollbar and native controls follow the theme too. The theme lives as `data-theme` on
-the `.jl` div, a *descendant* of `<html>`, so the dark rule reads it upward with
-`:has(.jl[data-theme='dark'])`.
+the `.jl` div, a *descendant* of `<html>`, so each rule reads it upward with
+`:has(.jl[data-theme='...'])`; the bare `html` rule covers the jolteon default.
 
-The two hex values mirror `--bg` in `dashboard.css`; that file stays the source of truth,
-so change both together if the palette moves.
+**`global.css` carries one hex per theme, mirroring that theme's `--bg`** (jolteon
+`#6a4a2c`, flareon `#7a211b`, glaceon `#1a2a40`, light `#efe3c2`). `dashboard.css` stays
+the source of truth, so move the palette and update `global.css` in the same commit --
+a theme with no rule there falls back to the jolteon brown behind the panel.
 
 ### Careful: `bridge/readings.db` currently holds synthetic data
 

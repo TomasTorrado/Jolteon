@@ -39,3 +39,9 @@ Change the numbers in `WINDOWS` in `useDashboardData.js`. Polling pauses while t
 - `PHONE_WH` in `Dashboard.jsx` (13.9 Wh) is an approximate iPhone 16 battery energy.
 - `since` is sent as an ISO string (`2026-10-10T14:30:00.000Z`). Make sure `api/main.py` accepts that.
 - `max_points` should downsample the result. If the API returns every row for 24h, the chart will be slow.
+
+## Themes
+The button next to the trio image opens a dropdown: Jolteon (default), Flareon, Glaceon, Light.
+The choice is saved in localStorage under `jolteon-theme`. Themes only change surface colours
+(`[data-theme='...']` blocks at the top of `dashboard.css`); the data colours stay the same.
+To add a theme, add a block there and an entry in the `THEMES` array in `Dashboard.jsx`.

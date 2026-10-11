@@ -1,12 +1,106 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Dela+Gothic+One&family=Nunito:wght@400;600;700;800&display=swap');
 
-/* ---------- theme tokens ---------- */
-.jl {
-  --bg: #ebeef5;
-  --text: #2b3150;
-  --muted: #59627f;
-  --sd: #c6cddf; /* dark shadow */
-  --sl: #ffffff; /* light shadow */
+/* ---------- themes ----------
+   jolteon (default): dark brown poster   flareon: maroon + orange
+   glaceon: navy + cyan                   light: cream paper
+   Only the surface colours change. The data colours (gold, orange, amber,
+   hot, cold) are the same in every theme except Light, where they are
+   darkened for contrast on cream. */
+.jl,
+.jl[data-theme='jolteon'] {
+  --bg: #6a4a2c;
+  --gridline: rgba(28, 16, 6, 0.38);
+  --ink: #0e0904;
+  --card: #2a1d13;
+  --well: #1d130c;
+  --well-grid: rgba(235, 221, 184, 0.07);
+  --text: #f3e7c6;
+  --muted: #c9b58a;
+  --onbg: #f3e7c6;
+  --line: #4a3320;
+  --hair: rgba(235, 221, 184, 0.18);
+  --strip: #ebddb8;
+  --strip-text: #1e1510;
+  --hstrip: #ebddb8;
+  --tab-on: #f2b52e;
+  --on-tab: #1e1510;
+  --title-ink: #1e1510;
+  --kana: #f2b52e;
+  --pill-bg: #1e1510;
+  --pill-text: #f3e7c6;
+  --pill-muted: #c9b58a;
+  --band: rgba(235, 221, 184, 0.12);
+}
+.jl[data-theme='flareon'] {
+  --bg: #7a211b;
+  --gridline: rgba(242, 140, 40, 0.38);
+  --ink: #2b0d0a;
+  --card: #3a1511;
+  --well: #2a0e0b;
+  --well-grid: rgba(242, 140, 40, 0.11);
+  --text: #f6e8cc;
+  --muted: #e3b98a;
+  --onbg: #f6e8cc;
+  --line: #6b2a1d;
+  --hair: rgba(246, 232, 204, 0.2);
+  --strip: #f28c28;
+  --strip-text: #3a1210;
+  --hstrip: #f28c28;
+  --tab-on: #f28c28;
+  --on-tab: #3a1210;
+  --title-ink: #3a1210;
+  --kana: #f6e8cc;
+  --pill-bg: #2b0d0a;
+  --pill-text: #f6e8cc;
+  --pill-muted: #e3b98a;
+  --band: rgba(246, 232, 204, 0.12);
+}
+.jl[data-theme='glaceon'] {
+  --bg: #1a2a40;
+  --gridline: rgba(242, 247, 250, 0.26);
+  --ink: #08121f;
+  --card: #0f1d30;
+  --well: #0a1626;
+  --well-grid: rgba(53, 196, 232, 0.11);
+  --text: #eaf6fa;
+  --muted: #9cc4d6;
+  --onbg: #eaf6fa;
+  --line: #264766;
+  --hair: rgba(234, 246, 250, 0.2);
+  --strip: #35c4e8;
+  --strip-text: #07202e;
+  --hstrip: #35c4e8;
+  --tab-on: #35c4e8;
+  --on-tab: #07202e;
+  --title-ink: #07202e;
+  --kana: #f2f7f9;
+  --pill-bg: #08121f;
+  --pill-text: #eaf6fa;
+  --pill-muted: #9cc4d6;
+  --band: rgba(234, 246, 250, 0.12);
+}
+.jl[data-theme='light'] {
+  --bg: #efe3c2;
+  --gridline: rgba(120, 90, 40, 0.2);
+  --ink: #1e1510;
+  --card: #fff8e3;
+  --well: #f5e8c3;
+  --well-grid: rgba(120, 90, 40, 0.13);
+  --text: #1e1510;
+  --muted: #5e4b33;
+  --onbg: #3a2a1a;
+  --line: #1e1510;
+  --hair: rgba(30, 21, 16, 0.22);
+  --strip: #f2b52e;
+  --strip-text: #1e1510;
+  --hstrip: #fff8e3;
+  --tab-on: #f2b52e;
+  --on-tab: #1e1510;
+  --title-ink: #1e1510;
+  --kana: #f2b52e;
+  --pill-bg: #1e1510;
+  --pill-text: #f3e7c6;
+  --pill-muted: #c9b58a;
   --gold: #e2ac00;
   --gold-d: #a87100;
   --orange: #e8590c;
@@ -14,15 +108,11 @@
   --hot: #c62828;
   --cold: #2e92ea;
   --blue: #2e92ea;
-  --band: rgba(150, 160, 195, 0.22);
+  --band: rgba(30, 21, 16, 0.1);
   --pulse: rgba(226, 172, 0, 0.55);
 }
-.jl[data-theme='dark'] {
-  --bg: #262932;
-  --text: #eef0f9;
-  --muted: #a9b0c7;
-  --sd: #171920;
-  --sl: #33374a;
+/* data colours (all dark themes) */
+.jl {
   --gold: #ffd23f;
   --gold-d: #8a6a00;
   --orange: #ff8a3d;
@@ -30,17 +120,26 @@
   --hot: #ff6b6b;
   --cold: #5db5ff;
   --blue: #6cbbff;
-  --band: rgba(160, 170, 200, 0.16);
   --pulse: rgba(255, 210, 63, 0.6);
 }
-.jl {
-  --raise: 12px 12px 26px var(--sd), -12px -12px 26px var(--sl);
-  --raise-s: 6px 6px 14px var(--sd), -6px -6px 14px var(--sl);
-  --inset: inset 7px 7px 14px var(--sd), inset -7px -7px 14px var(--sl);
-  --inset-s: inset 4px 4px 9px var(--sd), inset -4px -4px 9px var(--sl);
+/* Light theme re-declares the data colours; it must come after the block above */
+.jl[data-theme='light'] {
+  --gold: #e2ac00;
+  --gold-d: #a87100;
+  --orange: #e8590c;
+  --amber: #f2a65a;
+  --hot: #c62828;
+  --cold: #2e92ea;
+  --blue: #2e92ea;
+  --pulse: rgba(226, 172, 0, 0.55);
+}
 
+.jl {
   font-family: 'Nunito', system-ui, -apple-system, sans-serif;
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--gridline) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
+  background-size: 32px 32px;
   color: var(--text);
   min-height: 100vh;
   padding: 48px 28px 72px;
@@ -72,7 +171,25 @@
   gap: 36px;
 }
 
-/* ---------- pulse dot ---------- */
+/* ---------- paper grain (look only, never touches data) ---------- */
+.jl-grain {
+  position: relative;
+}
+.jl-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .95 0 0 0 0 .88 0 0 0 0 .7 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.jl[data-theme='light'] .jl-grain::after {
+  opacity: 0.17;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .2 0 0 0 0 .1 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- pulse dot on the chart's newest point ---------- */
 @keyframes jl-pulse {
   0% { box-shadow: 0 0 0 0 var(--pulse); }
   70% { box-shadow: 0 0 0 9px rgba(0, 0, 0, 0); }
@@ -81,22 +198,8 @@
 .jl-pulse {
   animation: jl-pulse 2s infinite;
 }
-@media (prefers-reduced-motion: reduce) {
-  .jl-pulse { animation: none; }
-}
-.jl-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--gold);
-  flex: none;
-}
-.jl-dot-off {
-  background: var(--muted);
-  opacity: 0.6;
-}
 
-/* ---------- live bolt ---------- */
+/* ---------- live bolt + sparkles ---------- */
 @keyframes jl-zap {
   0%, 100% { filter: drop-shadow(0 0 0 var(--pulse)); }
   50% { filter: drop-shadow(0 0 7px var(--pulse)); }
@@ -115,149 +218,349 @@
   opacity: 0.5;
   animation: none;
 }
+.jl-bolt-wrap {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: block;
+}
+/* Two identical keyframes with different names: swapping the class on every
+   new reading restarts the animation, so the stars twinkle once per reading. */
+@keyframes jl-twA {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  30% { transform: scale(1.2) rotate(45deg); opacity: 1; }
+  100% { transform: scale(0) rotate(90deg); opacity: 0; }
+}
+@keyframes jl-twB {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  30% { transform: scale(1.2) rotate(45deg); opacity: 1; }
+  100% { transform: scale(0) rotate(90deg); opacity: 0; }
+}
+.jl-sp {
+  position: absolute;
+  fill: #ffd23f;
+  opacity: 0;
+  transform: scale(0);
+  pointer-events: none;
+}
+.jl-sp1 { left: 17px; top: -9px; width: 12px; height: 12px; }
+.jl-sp2 { left: -11px; top: 3px; width: 9px; height: 9px; fill: #ffe98a; }
+.jl-sp3 { left: 15px; top: 17px; width: 8px; height: 8px; }
+.jl-spA .jl-sp { animation: jl-twA 1s ease-out both; }
+.jl-spB .jl-sp { animation: jl-twB 1s ease-out both; }
+.jl-spA .jl-sp1, .jl-spB .jl-sp1 { animation-delay: 0s; }
+.jl-spA .jl-sp2, .jl-spB .jl-sp2 { animation-delay: 0.14s; }
+.jl-spA .jl-sp3, .jl-spB .jl-sp3 { animation-delay: 0.28s; }
+.jl-sp-off .jl-sp { animation: none !important; opacity: 0; }
+
 @media (prefers-reduced-motion: reduce) {
-  .jl-bolt { animation: none; }
+  .jl-pulse,
+  .jl-bolt,
+  .jl .jl-sp {
+    animation: none !important;
+  }
 }
 
-/* ---------- header ---------- */
+/* ---------- header: label strips with dashed inner border ---------- */
 .jl-header {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  align-items: stretch;
   gap: 20px;
 }
-.jl-brand {
+.jl-hbox {
+  background: var(--hstrip);
+  border: 3px solid var(--ink);
+  box-shadow: 7px 7px 0 var(--ink);
+  border-radius: 12px;
+  padding: 10px;
+}
+.jl-hbox-main {
+  flex: 1 1 560px;
+  min-width: 0;
+}
+.jl-hbox-side {
+  flex: 0 1 auto;
+}
+.jl-hbox-in {
+  height: 100%;
+  border: 2px dashed var(--ink);
+  border-radius: 6px;
+}
+.jl-hbox-main .jl-hbox-in {
+  padding: 12px 22px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 18px;
+  /* nowrap: the logo belongs beside the J, not stacked above the title. If it
+     wraps it gets a line of its own and the whole header box grows taller. The
+     h1 below shrinks instead (clamp), which costs nothing. */
+  flex-wrap: nowrap;
+}
+.jl-hbox-side .jl-hbox-in {
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
 }
 .jl-logo {
-  width: 88px;
-  height: 88px;
-  flex: none;
+  width: 68px;
+  height: 68px;
+  /* 0 0 auto, not 0 1 92px: shrinking the logo to buy the title room distorted
+     nothing but looked accidental. It keeps its size; the title gives way. */
+  flex: 0 0 auto;
   object-fit: contain;
-  /* embossed look: white spikes stay visible on the light background */
-  filter: drop-shadow(5px 5px 7px var(--sd)) drop-shadow(-3px -3px 5px var(--sl));
-}
-.jl-header-right {
-  display: flex;
-  align-items: center;
-  gap: 28px;
 }
 .jl-trio {
+  /* 120 - 8px padding = 112px of artwork, exactly as before. The padding is
+     the point: eeveelutions.png is cropped flush to the ink on its left, top
+     and right edges -- Glaceon's right ear tip reaches the very last pixel
+     column (alpha 22) -- so with no margin that tip renders blunt against the
+     dashed border and reads as a cut. */
   height: 120px;
   width: auto;
   max-width: 100%;
   object-fit: contain;
+  padding: 4px 6px;
+  box-sizing: border-box;
 }
 .jl-header-text {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  min-width: 0;
 }
 .jl-header h1 {
-  font-size: 40px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
+  font-family: 'Anton', 'Impact', 'Haettenschweiler', 'Arial Narrow', sans-serif;
+  font-weight: 400;
+  font-size: clamp(34px, 5.8vw, 64px);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--title-ink);
+}
+.jl-subrow {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 .jl-status {
-  align-self: flex-start;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 20px;
+  padding: 8px 18px 8px 14px;
   border-radius: 999px;
-  box-shadow: var(--inset-s);
+  background: var(--pill-bg);
   font-size: 17px;
-  font-weight: 700;
-  color: var(--muted);
+  font-weight: 800;
+  color: var(--pill-muted);
   font-variant-numeric: tabular-nums;
 }
 .jl-status strong {
-  color: var(--text);
-  font-weight: 700;
+  color: var(--pill-text);
+  font-weight: 800;
 }
-.jl-iconbtn {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 0;
-  background: var(--bg);
+/* Japanese name: decoration only, sits beside the status pill */
+.jl-kana {
+  font-family: 'Dela Gothic One', sans-serif;
+  font-size: 36px;
+  line-height: 1.1;
+  white-space: nowrap;
+  color: var(--kana);
+  -webkit-text-stroke: 6px var(--ink);
+  paint-order: stroke fill;
+  transform: rotate(-3deg);
+  padding: 0 4px;
+}
+
+/* On a phone there is no width left to shrink the title into, so let the logo
+   drop onto its own line after all -- a taller header box is fine there. */
+@media (max-width: 640px) {
+  .jl-hbox-main .jl-hbox-in {
+    flex-wrap: wrap;
+    padding: 12px 16px;
+  }
+}
+
+/* ---------- theme dropdown ---------- */
+.jl-theme {
+  position: relative;
+  flex: none;
+}
+.jl-theme-btn {
+  height: 52px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 3px solid var(--ink);
+  background: var(--card);
   color: var(--text);
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 10px;
   cursor: pointer;
-  box-shadow: var(--raise-s);
+  box-shadow: 4px 4px 0 var(--ink);
+  font-size: 17px;
+  font-weight: 800;
 }
-.jl-iconbtn svg {
-  width: 24px;
-  height: 24px;
+.jl-theme-btn svg {
+  width: 16px;
+  height: 16px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.jl-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex: none;
+  border: 2px solid var(--ink);
+}
+.jl-theme-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+}
+.jl-theme-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  z-index: 40;
+  width: 220px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--card);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.jl-theme-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 46px;
+  padding: 0 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 800;
+  border: 2px solid transparent;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+}
+.jl-theme-item span:nth-child(2) {
+  flex: 1;
+}
+.jl-theme-item[aria-selected='true'] {
+  background: var(--tab-on);
+  color: var(--on-tab);
+  border-color: var(--ink);
+}
+.jl-theme-item svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-/* ---------- segmented control (inset track, raised selected) ---------- */
+/* ---------- segmented control ---------- */
 .jl-seg {
   display: flex;
   gap: 4px;
-  padding: 6px;
-  border-radius: 999px;
-  box-shadow: var(--inset-s);
+  padding: 5px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--well);
 }
 .jl-seg button {
   flex: 1;
-  height: 48px;
+  height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 0;
-  border-radius: 999px;
   cursor: pointer;
   font-size: 18px;
   font-weight: 800;
+  border-radius: 8px;
   background: transparent;
-  color: var(--muted);
+  color: var(--text);
+  border: 2px solid transparent;
 }
 .jl-seg button[aria-pressed='true'] {
-  background: var(--bg);
-  color: var(--text);
-  box-shadow: var(--raise-s);
-}
-.jl-seg button .jl-dot {
-  width: 8px;
-  height: 8px;
+  background: var(--tab-on);
+  color: var(--on-tab);
+  border-color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 .jl-seg-view {
   align-self: flex-start;
   width: min(100%, 420px);
+  border-width: 3px;
+  background: var(--card);
+  box-shadow: 4px 4px 0 var(--ink);
 }
 
-/* ---------- raised cards ---------- */
+/* ---------- cards ---------- */
 .jl-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 32px;
 }
+@media (max-width: 1000px) {
+  .jl-grid { gap: 20px; }
+}
+@media (max-width: 640px) {
+  .jl-grid { grid-template-columns: 1fr; }
+}
 .jl-card {
-  background: var(--bg);
-  box-shadow: var(--raise);
-  border-radius: 40px;
-  padding: 32px 28px;
+  background: var(--card);
+  border: 3px solid var(--ink);
+  box-shadow: 7px 7px 0 var(--ink);
+  border-radius: 12px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 24px;
   min-width: 0;
 }
+.jl-strip {
+  background: var(--strip);
+  border-bottom: 3px solid var(--ink);
+  padding: 8px;
+}
+.jl-strip-in {
+  border: 2px dashed var(--ink);
+  border-radius: 6px;
+  padding: 9px 14px;
+  overflow: hidden;
+}
 .jl-card-title {
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1.2;
+  font-family: 'Anton', 'Impact', 'Haettenschweiler', 'Arial Narrow', sans-serif;
+  font-weight: 400;
+  font-size: clamp(16px, 2.05vw, 24px);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--strip-text);
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.jl-card-body {
+  padding: 24px clamp(14px, 2vw, 24px) 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
 }
 .jl-big {
   display: flex;
@@ -266,7 +569,7 @@
   gap: 4px 10px;
 }
 .jl-big-num {
-  font-size: 66px;
+  font-size: clamp(44px, 5.5vw, 66px);
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1;
@@ -281,8 +584,12 @@
 /* ---------- chart ---------- */
 .jl-well {
   padding: 14px 16px 12px;
-  border-radius: 28px;
-  box-shadow: var(--inset);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background-color: var(--well);
+  background-image: linear-gradient(var(--well-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--well-grid) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 .jl-chart {
   position: relative;
@@ -308,7 +615,7 @@
   position: absolute;
   top: -8px;
   bottom: 0;
-  border-left: 2px dashed var(--sd);
+  border-left: 2px dashed var(--muted);
   pointer-events: none;
 }
 .jl-hdot {
@@ -317,7 +624,7 @@
   height: 14px;
   margin: -7px 0 0 -7px;
   border-radius: 50%;
-  background: var(--bg);
+  background: var(--well);
   border: 3px solid;
   pointer-events: none;
 }
@@ -328,17 +635,18 @@
   height: 16px;
   margin: -8px 0 0 -8px;
   border-radius: 50%;
-  border: 3px solid var(--bg);
+  border: 3px solid var(--well);
   pointer-events: none;
 }
 .jl-pill {
   position: absolute;
   top: 0;
   transform: translateX(-50%);
-  padding: 7px 14px;
-  border-radius: 999px;
-  background: var(--bg);
-  box-shadow: var(--raise-s);
+  padding: 6px 13px;
+  border-radius: 6px;
+  background: var(--card);
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
   font-size: 15px;
   font-weight: 800;
   white-space: nowrap;
@@ -364,100 +672,122 @@
   color: var(--muted);
 }
 
-/* ---------- inset stat rows ---------- */
+/* ---------- stat rows ---------- */
 .jl-rows {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 .jl-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 14px 18px;
-  border-radius: 999px;
-  box-shadow: var(--inset-s);
+  padding: 12px clamp(10px, 1.2vw, 16px);
+  border-radius: 8px;
+  border: 2px solid var(--line);
+  background: var(--well);
 }
 .jl-row-label {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
   white-space: nowrap;
-  font-size: 18px;
+  font-size: clamp(13px, 1.45vw, 18px);
   font-weight: 700;
   color: var(--muted);
 }
 .jl-row-dot {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   flex: none;
+  border: 2px solid var(--ink);
 }
 .jl-row-value {
-  font-size: 22px;
+  font-size: clamp(16px, 1.8vw, 22px);
   font-weight: 800;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+.jl-rows-lg .jl-row {
+  padding: 14px 20px;
+}
+.jl-rows-lg .jl-row-label {
+  font-size: 18px;
+}
 .jl-row-value-lg {
   font-size: 24px;
 }
-.jl-rows-lg .jl-row {
-  padding: 14px 24px;
-}
 
-/* ---------- phone tab ---------- */
-.jl-phone {
+/* ---------- phone tab (printed dial) ---------- */
+.jl-phone-body-wrap {
   padding: 36px 44px;
-  flex-direction: row;
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 32px 56px;
 }
+.jl-phone-title {
+  font-family: 'Anton', 'Impact', 'Haettenschweiler', 'Arial Narrow', sans-serif;
+  font-weight: 400;
+  font-size: 28px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--strip-text);
+  line-height: 1.15;
+}
 .jl-ring {
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: 220px;
+  height: 220px;
   flex: none;
-  border-radius: 50%;
-  box-shadow: var(--raise);
 }
 .jl-ring svg {
   position: absolute;
   inset: 0;
-  width: 200px;
-  height: 200px;
+  width: 220px;
+  height: 220px;
+}
+.jl-ring-ticks {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 8;
+  stroke-dasharray: 2.5 7.55;
+}
+.jl-ring-edge {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 36;
 }
 .jl-ring-track {
   fill: none;
-  stroke: var(--sd);
-  stroke-opacity: 0.55;
-  stroke-width: 10;
+  stroke: var(--well);
+  stroke-width: 28;
 }
 .jl-ring-fill {
   fill: none;
   stroke: var(--gold);
-  stroke-width: 10;
-  stroke-linecap: round;
+  stroke-width: 28;
   transform: rotate(-90deg);
-  transform-origin: 100px 100px;
+  transform-origin: 110px 110px;
   transition: stroke-dasharray 0.6s ease;
 }
 .jl-ring-inner {
   position: absolute;
-  left: 32px;
-  top: 32px;
-  width: 136px;
-  height: 136px;
+  left: 53px;
+  top: 53px;
+  width: 114px;
+  height: 114px;
   border-radius: 50%;
-  box-shadow: var(--inset-s);
+  border: 3px solid var(--ink);
+  background: var(--card);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 44px;
+  font-size: 40px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
@@ -468,20 +798,18 @@
   flex-direction: column;
   gap: 18px;
 }
-.jl-phone-title {
-  font-size: 33px;
-  font-weight: 800;
-}
 .jl-phone-sub {
-  margin-top: 6px;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   color: var(--muted);
 }
 
 /* ---------- raw readings ---------- */
-.jl-raw {
-  padding: 28px 32px;
+.jl-raw-body {
+  padding: 24px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
 }
 .jl-raw-head {
   display: flex;
@@ -490,36 +818,32 @@
   justify-content: space-between;
   gap: 16px;
 }
-.jl-raw-head > div {
+.jl-raw-head p {
   flex: 1 1 280px;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.jl-raw-head p {
   font-size: 17px;
   line-height: 1.5;
   font-weight: 600;
   color: var(--muted);
 }
 .jl-btn {
-  height: 52px;
-  padding: 0 28px;
-  border-radius: 999px;
-  border: 0;
-  background: var(--bg);
-  box-shadow: var(--raise-s);
-  color: var(--text);
+  height: 48px;
+  padding: 0 26px;
+  border-radius: 8px;
+  border: 2px solid var(--ink);
+  background: var(--tab-on);
+  box-shadow: 3px 3px 0 var(--ink);
+  color: var(--on-tab);
   font-size: 17px;
   font-weight: 800;
   cursor: pointer;
 }
 .jl-table-wrap {
   overflow-x: auto;
-  padding: 16px 24px;
-  border-radius: 28px;
-  box-shadow: var(--inset);
+  padding: 16px 22px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: var(--well);
 }
 .jl-table {
   min-width: 640px;
@@ -529,7 +853,7 @@
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 12px;
   padding: 10px 0;
-  border-top: 1px solid var(--sd);
+  border-top: 1px solid var(--hair);
   font-size: 17px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -544,8 +868,8 @@
 .jl-foot {
   font-size: 16px;
   line-height: 1.6;
-  font-weight: 600;
-  color: var(--muted);
+  font-weight: 700;
+  color: var(--onbg);
   text-align: center;
   text-wrap: pretty;
 }
