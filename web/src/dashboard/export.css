@@ -1,0 +1,273 @@
+/* Export view. Kept out of dashboard.css (as shipped) and built only from its
+   theme tokens, so all four themes work without per-theme rules here.
+   Also holds the project's only @media print block: the printed report. */
+
+.jl-export {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+.jl-card-body.jl-export-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.jl-export-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.jl-export-badge {
+  padding: 7px 14px;
+  border: 2px dashed var(--muted);
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.jl-export-badge-warn {
+  border-style: solid;
+  border-color: var(--hot);
+  color: var(--hot);
+}
+.jl-export-warn {
+  margin: 0;
+  padding: 12px 16px;
+  border: 2px solid var(--hot);
+  border-radius: 8px;
+  background: var(--well);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--text);
+  text-wrap: pretty;
+}
+
+.jl-export-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: var(--well);
+}
+.jl-export-error p {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.jl-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.jl-export-actions .jl-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.jl-export-hint {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+/* The report exists in the DOM so React can keep it in step with the data,
+   but it is only ever seen on paper. */
+.jl-print-report {
+  display: none;
+}
+
+/* ---------- printed report ---------- */
+@media print {
+  @page {
+    size: auto;
+    margin: 14mm 12mm;
+  }
+
+  /* Dashboard chrome has no place on the sheet. The Charts/Phone/Scale views
+     are not mounted while the Export tab is open, so only these need hiding. */
+  .jl-header,
+  .jl-seg-view,
+  .jl-export-screen,
+  .jl-foot {
+    display: none !important;
+  }
+
+  /* Light on white whatever the theme, but the data colours are set per-element
+     in Export.jsx and stay exactly as they are on screen. */
+  .jl {
+    background: #fff !important;
+    background-image: none !important;
+    padding: 0 !important;
+    color: #111 !important;
+    min-height: 0 !important;
+  }
+  .jl-wrap {
+    max-width: none !important;
+    gap: 0 !important;
+  }
+  .jl-grain::after {
+    display: none !important;
+  }
+
+  .jl-print-report {
+    display: block;
+    font-family: 'Nunito', system-ui, sans-serif;
+    color: #111;
+  }
+  .jl-print-report h1 {
+    margin: 0;
+    font-family: 'Anton', Impact, sans-serif;
+    font-weight: 400;
+    font-size: 26pt;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .jl-pr-sub {
+    margin: 2mm 0 6mm;
+    font-size: 10pt;
+    color: #555;
+  }
+  .jl-pr-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 7mm;
+  }
+  .jl-pr-block h2 {
+    margin: 0 0 3mm;
+    padding-bottom: 1.5mm;
+    border-bottom: 1.5pt solid #111;
+    font-size: 12pt;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .jl-pr-trace {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3mm 6mm;
+    margin: 0;
+  }
+  .jl-pr-trace-wide {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .jl-pr-trace div {
+    break-inside: avoid;
+  }
+  .jl-pr-trace dt {
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #666;
+  }
+  .jl-pr-trace dd {
+    margin: 0.5mm 0 0;
+    font-size: 10.5pt;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .jl-pr-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4mm;
+  }
+  .jl-pr-stat {
+    break-inside: avoid;
+    padding: 3mm;
+    border: 1.5pt solid #111;
+    border-radius: 2mm;
+    text-align: center;
+  }
+  .jl-pr-stat span {
+    display: block;
+    font-size: 17pt;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .jl-pr-stat label {
+    display: block;
+    margin-top: 1mm;
+    font-size: 8.5pt;
+    color: #555;
+  }
+  .jl-pr-note {
+    margin: 3mm 0 0;
+    font-size: 9pt;
+    line-height: 1.45;
+    color: #555;
+  }
+
+  .jl-pr-chart svg {
+    display: block;
+    width: 100%;
+    height: 34mm;
+    border: 1pt solid #bbb;
+    border-radius: 1.5mm;
+    background: #fff;
+  }
+  .jl-pr-axis {
+    stroke: #ddd;
+    stroke-width: 1;
+  }
+  .jl-pr-scale,
+  .jl-pr-xaxis {
+    display: flex;
+    justify-content: space-between;
+    gap: 4mm;
+    margin-top: 1.2mm;
+    font-size: 8pt;
+    color: #555;
+    font-variant-numeric: tabular-nums;
+  }
+  .jl-pr-keys {
+    display: flex;
+    gap: 4mm;
+  }
+  .jl-pr-keys i {
+    display: inline-block;
+    width: 2.6mm;
+    height: 2.6mm;
+    margin-right: 1mm;
+    border-radius: 50%;
+    vertical-align: middle;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .jl-pr-nochart {
+    padding: 6mm;
+    border: 1pt dashed #bbb;
+    font-size: 9pt;
+    color: #666;
+    text-align: center;
+  }
+
+  .jl-pr-foot {
+    break-inside: avoid;
+    margin-top: 6mm;
+    padding-top: 2.5mm;
+    border-top: 1pt solid #bbb;
+  }
+  .jl-pr-foot p {
+    margin: 0 0 1.5mm;
+    font-size: 8.5pt;
+    line-height: 1.45;
+    color: #555;
+  }
+
+  /* Keep the hand-drawn strokes their real colour on paper. */
+  .jl-print-report svg path {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
