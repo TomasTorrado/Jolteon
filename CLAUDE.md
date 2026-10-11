@@ -480,6 +480,30 @@ and one request per period is cheaper. Against Supabase a card on the 24 h tab s
 costs ~9 paged round-trips every 10 s, so prefer `DATA_SOURCE=sqlite` while developing.
 Polling pauses automatically while the tab is hidden.
 
+### Hot-side overheat alarm
+
+When `t_hot_c` reads **110 °C or more** the dashboard shows a flashing red banner (sticky
+at the top), plays a loud two-tone siren and changes the tab title to `⚠ OVERHEAT 112 °C`.
+It is latched: it clears only on a reading **below 108 °C** (hysteresis, so a plate sitting
+at the limit can't flap it every 10 s). A `null` reading (DS18B20 dropped out) and stale
+data both leave it on -- neither proves the plate has cooled. "Silence 60 s" mutes the
+siren only; the banner stays, and the sound returns if it is still hot.
+
+| File | Role |
+| --- | --- |
+| `overheat.js` | thresholds + the pure on/off rule. Tested by `overheat.test.js` (`npm test`, Node's built-in runner) |
+| `useOverheatAlarm.js` | latched state, peak, Web Audio siren, snooze, tab title |
+| `OverheatBanner.jsx` + `alarm.css` | the banner. Kept out of `Dashboard.jsx`/`dashboard.css` on purpose |
+
+`Dashboard.jsx` holds just two lines of it (the hook call and `<OverheatBanner />`), so
+**a future zip drop deletes the alarm unless those two lines are re-added.**
+
+Browsers refuse audio until the page has had a click or key press. Until then the banner
+shows "Enable alarm sound"; any click anywhere unlocks it. **Click the dashboard once when
+setting up the demo laptop.** The `/api/latest` poll runs even in a hidden tab
+(`whileHidden`) so the alarm still fires there, though Chrome throttles background-tab
+timers, so detection in a hidden tab can lag by up to ~1 min.
+
 ### Layout breakpoints
 
 `.jl-grid` is `repeat(auto-fit, minmax(min(320px,100%),1fr))` with a 32 px gap, inside a

@@ -53,6 +53,9 @@ const float PROBE_SWAP_MARGIN_C = 2.0;
 const uint32_t REPORT_EVERY = 10;   // print a JSON line every 10 samples (10 s)
 const uint32_t SAVE_EVERY = 6;      // save seq and totals to flash every 6 lines (~60 s)
 const float DISCHARGE_MA = -5.0;    // battery current below this -> "ph":"dis"
+// INA219 #2's VIN+/VIN- are wired reversed on this build, so its raw current reads negative
+// while charging. -1 flips it back to positive = charging. Set to 1.0 if the wires are swapped.
+const float BATT_CURRENT_SIGN = -1.0;
 
 Adafruit_INA219 inaTeg(0x40);
 Adafruit_INA219 inaBatt(0x40);
@@ -313,7 +316,7 @@ void loop() {
   float tegmA = teg.currentmA;
 
   float battV = batt.busV;
-  float battmA = batt.currentmA;
+  float battmA = BATT_CURRENT_SIGN * batt.currentmA;
   float battmW = battV * battmA;
 
   Mode newMode = Mode::Idle;

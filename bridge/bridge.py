@@ -40,6 +40,11 @@ def stamp():
     return datetime.now().strftime("%H:%M:%S")
 
 
+def fmt_temp(celsius):
+    """A probe temperature for the status line; '--' when the probe sent null."""
+    return "--" if celsius is None else f"{celsius:.1f}C"
+
+
 def is_number(value):
     """True for real, finite numbers: excludes bools (Python counts them as ints) and NaN/Infinity."""
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
@@ -225,7 +230,8 @@ def main():
             status = "saved" if db.save_reading(reading) else "duplicate"  # duplicate = seq already in SQLite
             if client:
                 stats.uploaded += upload_backlog(client)
-            print(f"{status} seq={reading['seq']}  energy={reading['energy_wh']:.3f} Wh"
+            print(f"{status} seq={reading['seq']}  hot={fmt_temp(reading.get('t_hot_c'))}"
+                  f"  cold={fmt_temp(reading.get('t_cold_c'))}  energy={reading['energy_wh']:.3f} Wh"
                   f"  uploaded={stats.uploaded}  pending={db.count_pending()}"
                   f"  reconnects={stats.reconnects}  reboots={stats.reboots}  gaps={stats.seq_gaps}", flush=True)
     except KeyboardInterrupt:

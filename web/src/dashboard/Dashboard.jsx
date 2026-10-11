@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import Chart from './Chart';
+import OverheatBanner from './OverheatBanner';
 import { PERIOD_MS, useDashboardData, useReadings, WINDOWS } from './useDashboardData';
+import { useOverheatAlarm } from './useOverheatAlarm';
 import logo from './assets/jolteon-logo.png';
 import trio from './assets/eeveelutions.png';
 import './dashboard.css';
@@ -271,6 +273,7 @@ export default function Dashboard() {
   const { latest, summary, recent } = useDashboardData();
   const L = latest.data; // newest reading, or null
   const S = summary.data;
+  const overheat = useOverheatAlarm(L);
   const kana = (THEMES.find((t) => t.key === theme) || THEMES[0]).kana;
 
   // ---- connection status for the header pill ----
@@ -358,6 +361,7 @@ export default function Dashboard() {
   return (
     <div className="jl" data-theme={theme}>
       <div className="jl-wrap">
+        {overheat.alarm && <OverheatBanner {...overheat} />}
         <header className="jl-header">
           <div className="jl-hbox jl-hbox-main jl-grain">
             <div className="jl-hbox-in">

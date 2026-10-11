@@ -45,7 +45,10 @@ export const WINDOWS = {
 // Pass `keyOf` to phase-lock to the data: it returns the identity of the
 // newest payload, and the next call is timed from when that identity changed.
 // Without it this is a plain `intervalMs` timer.
-function usePoll(fn, intervalMs, deps, keyOf) {
+//
+// Polling normally pauses while the tab is hidden. `whileHidden` keeps it
+// going, for polls that drive an alarm.
+function usePoll(fn, intervalMs, deps, keyOf, { whileHidden = false } = {}) {
   const [state, setState] = useState({ data: null, error: null, loaded: false });
 
   useEffect(() => {
@@ -63,7 +66,7 @@ function usePoll(fn, intervalMs, deps, keyOf) {
       if (alive) timer = setTimeout(tick, Math.max(ms, MIN_GAP_MS));
     };
     const tick = async () => {
-      if (document.hidden) {
+      if (document.hidden && !whileHidden) {
         hunting = false;
         return schedule(intervalMs);
       }
@@ -162,7 +165,8 @@ export function useReadings(win) {
 }
 
 export function useDashboardData() {
-  const latest = usePoll(getLatest, PERIOD_MS, [], rowKey);
+  // Keeps running in a hidden tab: it feeds the overheat alarm.
+  const latest = usePoll(getLatest, PERIOD_MS, [], rowKey, { whileHidden: true });
   const summary = usePoll(getSummary, PERIOD_MS, [], summaryKey);
 
   // Last 6 distinct packets seen by the /latest poll, newest first.
