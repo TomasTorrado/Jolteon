@@ -104,6 +104,32 @@ python3 scripts/analyze_run.py --source supabase --actual-iphone-pct 38  # add t
 
 Writes `scripts/metrics/run_report.md`, `scripts/metrics/run_results.json` and the PNG charts in `scripts/metrics/charts/`.
 
+## Deployment
+
+The dashboard and the API deploy as **two separate Vercel projects** from this same GitHub repo. The bridge always runs on the MacBook next to the ESP32; it is not deployed.
+
+| | Project 1: frontend | Project 2: API |
+|---|---|---|
+| **Root Directory** | `web` | repo root (leave empty / `./`) |
+| **Framework preset** | Vite (auto-detected) | FastAPI (auto-detected from `requirements.txt`) |
+| **Build** | `npm run build` → `dist/` | none; Vercel loads `app` from the root `main.py`, which imports `api/main.py` |
+| **Environment variables** | `VITE_API_URL` | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `DATA_SOURCE`, `ALLOWED_ORIGINS` |
+
+**Frontend env var**
+- `VITE_API_URL` = the API project's URL, e.g. `https://jolteon-api.vercel.app` (no trailing slash and no `/api`; the dashboard adds `/api` itself). It is baked in at build time, so redeploy the frontend after changing it. Everything starting with `VITE_` ends up in public JavaScript, so never put a key in it.
+
+**API env vars**
+- `SUPABASE_URL` – your project URL.
+- `SUPABASE_PUBLISHABLE_KEY` – the read-only key (reads are allowed by the RLS policy).
+- `DATA_SOURCE` = `supabase` (there is no local SQLite file on Vercel).
+- `ALLOWED_ORIGINS` = the frontend's URL, e.g. `https://jolteon-web.vercel.app` (comma-separated if there are several, e.g. a custom domain too; no trailing slash). `http://localhost:5173` is always allowed.
+
+**`SUPABASE_SECRET_KEY` never goes in either project.** It stays in the MacBook's `.env`, used only by the bridge (and the test scripts) to write rows.
+
+**Order:** deploy the API first and check `https://<api-url>/api/health` returns `{"ok":true,"source":"supabase"}`. Then deploy the frontend with `VITE_API_URL` set to that URL. Finally set `ALLOWED_ORIGINS` on the API to the frontend's URL and redeploy the API.
+
+**How the API deployment is set up:** `vercel.json` excludes `firmware/`, `bridge/`, `scripts/`, `web/`, `metrics/`, `db/`, `docs/`, `*.db` and Markdown files from the function bundle, so only `main.py` and `api/` ship (the API copies the column list it needs from `bridge/local_db.py`, so it doesn't need `bridge/`). `.python-version` pins Python 3.12. Locally, keep running the API with `python3 -m uvicorn api.main:app --port 8000`.
+
 ## Fake data
 
 ```

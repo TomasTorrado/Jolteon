@@ -8,10 +8,18 @@ Both sources have the same four methods, so main.py doesn't care which one it's 
 """
 import os
 import sqlite3
+from pathlib import Path
 
 from supabase import ClientOptions, create_client
 
-from bridge.local_db import COLUMNS, DEFAULT_DB_PATH
+# Copied from bridge/local_db.py so the deployed API doesn't need the bridge folder.
+# Keep in sync with local_db.COLUMNS if the data contract changes.
+COLUMNS = [
+    "ts", "seq", "uptime_s", "phase", "t_hot_c", "t_cold_c", "delta_t_c", "gen_v", "gen_ma", "gen_w",
+    "batt_v", "batt_ma", "batt_w", "charge_mah", "energy_wh",
+]
+# The bridge's local SQLite file (only used when DATA_SOURCE=sqlite, i.e. locally)
+DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent / "bridge" / "readings.db"
 
 # Fields the API returns: every contract column except uptime_s (the dashboard doesn't need it)
 FIELDS = [c for c in COLUMNS if c != "uptime_s"]
